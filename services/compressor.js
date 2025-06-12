@@ -3,36 +3,49 @@ const path = require("path");
 const fs = require("fs");
 const sharp = require("sharp");
 
-const BASE_URL = "https://weisspress.onrender.com"; // Change this to your deployed URL
+// Update this with your deployed base URL when not using localhost
+const BASE_URL = "https://weisspress.onrender.com";
+
+// Helper to ensure output directory exists
+const ensureDir = (dirPath) => {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+};
 
 async function compressFile(file) {
   const ext = path.extname(file.originalname).toLowerCase();
-  const baseName = path.basename(file.originalname, ext).replace(/\s+/g, "_");
+  const baseName = path.basename(file.originalname, ext);
   const timestamp = Date.now();
 
   const result = { originalName: file.originalname };
 
   return new Promise((resolve, reject) => {
-    // VIDEO FILES
-    if (/\.(mp4|mov|avi|mkv)$/.test(ext)) {
-      const outputVideoPath = path.join("uploads/videos", `${timestamp}-${baseName}.mp4`);
-      const thumbnailPath = path.join("uploads/thumbnails", `${timestamp}-${baseName}.jpg`);
+    // Handle VIDEO files
+    if (ext.match(/\.(mp4|mov|avi|mkv)$/)) {
+      const videoDir = path.join("uploads/videos");
+      const thumbDir = path.join("uploads/thumbnails");
+      ensureDir(videoDir);
+      ensureDir(thumbDir);
+
+      const outputVideoPath = path.join(videoDir, `${timestamp}-${baseName}.mp4`);
+      const thumbnailPath = path.join(thumbDir, `${timestamp}-${baseName}.jpg`);
 
       ffmpeg(file.path)
         .outputOptions([
           "-vcodec libx264",
           "-crf 28",
           "-preset fast",
-          "-movflags +faststart"
+          "-movflags +faststart",
         ])
         .save(outputVideoPath)
         .on("end", () => {
-          // Thumbnail generation
+          // Generate thumbnail
           ffmpeg(file.path)
             .screenshots({
               timestamps: ["10%"],
               filename: path.basename(thumbnailPath),
-              folder: "uploads/thumbnails",
+              folder: thumbDir,
               size: "640x?"
             })
             .on("end", () => {
@@ -45,13 +58,20 @@ async function compressFile(file) {
         .on("error", reject);
     }
 
-    // IMAGE FILES
-    else if (/\.(jpg|jpeg|png|webp)$/.test(ext)) {
-      const sizes = { low: 320, medium: 720, high: 1280 };
+    // Handle IMAGE files
+    else if (ext.match(/\.(jpg|jpeg|png|webp)$/)) {
+      const imageDir = path.join("uploads/images");
+      ensureDir(imageDir);
+
+      const sizes = {
+        low: 320,
+        medium: 720,
+        high: 1280
+      };
       result.variants = [];
 
       const promises = Object.entries(sizes).map(async ([label, width]) => {
-        const outputImage = path.join("uploads/images", `${timestamp}-${baseName}-${label}.webp`);
+        const outputImage = path.join(imageDir, `${timestamp}-${baseName}-${label}.webp`);
         await sharp(file.path)
           .resize({ width })
           .webp({ quality: label === 'low' ? 40 : label === 'medium' ? 70 : 90 })
@@ -68,9 +88,12 @@ async function compressFile(file) {
         .catch(reject);
     }
 
-    // OTHER FILES
+    // Handle OTHER files
     else {
-      const outputPath = path.join("uploads/files", `${timestamp}-${file.originalname}`);
+      const filesDir = path.join("uploads/files");
+      ensureDir(filesDir);
+
+      const outputPath = path.join(filesDir, `${timestamp}-${file.originalname}`);
       fs.copyFile(file.path, outputPath, (err) => {
         if (err) return reject(err);
         result.compressedUrl = `${BASE_URL}/media/files/${path.basename(outputPath)}`;
