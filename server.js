@@ -8,7 +8,11 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: "*", // or specify your actual frontend domain instead of "*"
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
 app.use(express.json());
 app.use('/media/videos', express.static(path.join(__dirname, 'uploads/videos')));
 app.use('/media/thumbnails', express.static(path.join(__dirname, 'uploads/thumbnails')));
