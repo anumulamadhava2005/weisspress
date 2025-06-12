@@ -3,17 +3,18 @@ const path = require("path");
 const fs = require("fs");
 const sharp = require("sharp");
 
+const BASE_URL = "https://weisspress.onrender.com"; // Change this to your deployed URL
+
 async function compressFile(file) {
   const ext = path.extname(file.originalname).toLowerCase();
-  const baseName = path.basename(file.originalname, ext);
+  const baseName = path.basename(file.originalname, ext).replace(/\s+/g, "_");
   const timestamp = Date.now();
-  const BASE_URL = "https://e5d6-144-48-227-91.ngrok-free.app";
 
   const result = { originalName: file.originalname };
 
   return new Promise((resolve, reject) => {
-    // Handle VIDEO files
-    if (ext.match(/\.(mp4|mov|avi|mkv)$/)) {
+    // VIDEO FILES
+    if (/\.(mp4|mov|avi|mkv)$/.test(ext)) {
       const outputVideoPath = path.join("uploads/videos", `${timestamp}-${baseName}.mp4`);
       const thumbnailPath = path.join("uploads/thumbnails", `${timestamp}-${baseName}.jpg`);
 
@@ -22,11 +23,11 @@ async function compressFile(file) {
           "-vcodec libx264",
           "-crf 28",
           "-preset fast",
-          "-movflags +faststart",
+          "-movflags +faststart"
         ])
         .save(outputVideoPath)
         .on("end", () => {
-          // Generate thumbnail
+          // Thumbnail generation
           ffmpeg(file.path)
             .screenshots({
               timestamps: ["10%"],
@@ -35,8 +36,8 @@ async function compressFile(file) {
               size: "640x?"
             })
             .on("end", () => {
-              result.compressedUrl = `/uploads/videos/${path.basename(outputVideoPath)}`;
-              result.thumbnailUrl = `/uploads/thumbnails/${path.basename(thumbnailPath)}`;
+              result.compressedUrl = `${BASE_URL}/media/videos/${path.basename(outputVideoPath)}`;
+              result.thumbnailUrl = `${BASE_URL}/media/thumbnails/${path.basename(thumbnailPath)}`;
               resolve(result);
             })
             .on("error", reject);
@@ -44,13 +45,9 @@ async function compressFile(file) {
         .on("error", reject);
     }
 
-    // Handle IMAGE files
-    else if (ext.match(/\.(jpg|jpeg|png|webp)$/)) {
-      const sizes = {
-        low: 320,
-        medium: 720,
-        high: 1280
-      };
+    // IMAGE FILES
+    else if (/\.(jpg|jpeg|png|webp)$/.test(ext)) {
+      const sizes = { low: 320, medium: 720, high: 1280 };
       result.variants = [];
 
       const promises = Object.entries(sizes).map(async ([label, width]) => {
@@ -62,7 +59,7 @@ async function compressFile(file) {
 
         result.variants.push({
           quality: label,
-          url: `/uploads/images/${path.basename(outputImage)}`
+          url: `${BASE_URL}/media/images/${path.basename(outputImage)}`
         });
       });
 
@@ -71,12 +68,12 @@ async function compressFile(file) {
         .catch(reject);
     }
 
-    // Handle OTHER files
+    // OTHER FILES
     else {
       const outputPath = path.join("uploads/files", `${timestamp}-${file.originalname}`);
       fs.copyFile(file.path, outputPath, (err) => {
         if (err) return reject(err);
-        result.compressedUrl = `/uploads/files/${path.basename(outputPath)}`;
+        result.compressedUrl = `${BASE_URL}/media/files/${path.basename(outputPath)}`;
         resolve(result);
       });
     }

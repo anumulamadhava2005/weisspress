@@ -10,13 +10,10 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads"),{
-  setHeaders: (res, filePath) => {
-    // Optional: force inline content for files
-    res.setHeader("Content-Disposition", "inline");
-  }
-}));
-app.use("/thumbnails", express.static(path.join(__dirname, "thumbnails")));
+app.use('/media/videos', express.static(path.join(__dirname, 'uploads/videos')));
+app.use('/media/thumbnails', express.static(path.join(__dirname, 'uploads/thumbnails')));
+app.use('/media/images', express.static(path.join(__dirname, 'uploads/images')));
+app.use('/media/files', express.static(path.join(__dirname, 'uploads/files')));
 app.use('/api', uploadRoute);
 
 app.listen(PORT, () => {

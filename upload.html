@@ -22,6 +22,7 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      responseDiv.innerHTML = "Uploading...";
 
       const formData = new FormData();
       for (let file of fileInput.files) {
@@ -29,13 +30,45 @@
       }
 
       try {
-        const res = await fetch('http://localhost:5000/api/upload', {
+        const res = await fetch('https://weisspress.onrender.com/api/upload', {
           method: 'POST',
           body: formData
         });
 
         const data = await res.json();
-        responseDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        responseDiv.innerHTML = '';
+
+        if (data.success && Array.isArray(data.files)) {
+          data.files.forEach(file => {
+            if (file.thumbnailUrl && file.compressedUrl) {
+              // Video
+              responseDiv.innerHTML += `
+                <p><strong>Video:</strong></p>
+                <video src="${file.compressedUrl}" controls width="320"></video>
+                <p><strong>Thumbnail:</strong></p>
+                <img src="${file.thumbnailUrl}" width="160" />
+                <hr/>
+              `;
+            } else if (file.variants) {
+              // Image Variants
+              responseDiv.innerHTML += `<p><strong>Image Variants:</strong></p>`;
+              file.variants.forEach(variant => {
+                responseDiv.innerHTML += `
+                  <p>${variant.quality}</p>
+                  <img src="${variant.url}" width="160" />
+                `;
+              });
+              responseDiv.innerHTML += `<hr/>`;
+            } else if (file.compressedUrl) {
+              // Other files
+              responseDiv.innerHTML += `
+                <p><a href="${file.compressedUrl}" target="_blank">Download ${file.originalName}</a></p>
+              `;
+            }
+          });
+        } else {
+          responseDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
       } catch (err) {
         responseDiv.innerHTML = `<pre style="color:red;">${err.message}</pre>`;
       }
