@@ -1,24 +1,15 @@
 // server.js
 const express = require('express');
 const cors = require('cors');
-const path = require("path");
 const uploadRoute = require('./routes/upload');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors({
-  origin: "*", // or specify your actual frontend domain instead of "*"
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type"]
-}));
+app.use(cors());
 app.use(express.json());
-app.options('*', cors()); // Allow preflight requests
-app.use('/media/videos', express.static(path.join(__dirname, 'uploads/videos')));
-app.use('/media/thumbnails', express.static(path.join(__dirname, 'uploads/thumbnails')));
-app.use('/media/images', express.static(path.join(__dirname, 'uploads/images')));
-app.use('/media/files', express.static(path.join(__dirname, 'uploads/files')));
+app.use('/uploads', express.static('uploads')); // serve compressed files
 app.use('/api', uploadRoute);
 
 app.listen(PORT, () => {
