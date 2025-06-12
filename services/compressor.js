@@ -35,8 +35,8 @@ async function compressFile(file) {
               size: "640x?"
             })
             .on("end", () => {
-              result.compressedUrl = `${BASE_URL}/uploads/videos/${path.basename(outputVideoPath)}`;
-              result.thumbnailUrl = `${BASE_URL}/uploads/thumbnails/${path.basename(thumbnailPath)}`;
+              result.compressedUrl = `/uploads/videos/${path.basename(outputVideoPath)}`;
+              result.thumbnailUrl = `/uploads/thumbnails/${path.basename(thumbnailPath)}`;
               resolve(result);
             })
             .on("error", reject);
@@ -62,7 +62,7 @@ async function compressFile(file) {
 
         result.variants.push({
           quality: label,
-          url: `${BASE_URL}/uploads/images/${path.basename(outputImage)}`
+          url: `/uploads/images/${path.basename(outputImage)}`
         });
       });
 
