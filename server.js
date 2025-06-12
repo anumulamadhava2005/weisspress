@@ -14,6 +14,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type"]
 }));
 app.use(express.json());
+app.options('*', cors()); // Allow preflight requests
 app.use('/media/videos', express.static(path.join(__dirname, 'uploads/videos')));
 app.use('/media/thumbnails', express.static(path.join(__dirname, 'uploads/thumbnails')));
 app.use('/media/images', express.static(path.join(__dirname, 'uploads/images')));
